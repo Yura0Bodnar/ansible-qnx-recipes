@@ -1,0 +1,58 @@
+- name: 1. Generate Automotive Edge Agent installer locally
+  delegate_to: localhost
+  ansible.builtin.copy:
+    dest: "/tmp/install_automotive_agent.sh"
+    mode: '0755'
+    content: |
+      #!/bin/sh
+      set -e
+
+      INSTALL_DIR="/tmp/telemetry_agent"
+      CONFIG_DIR="$INSTALL_DIR/etc"
+      BIN_DIR="$INSTALL_DIR/bin"
+
+      echo "Creating directory structure in $INSTALL_DIR..."
+      mkdir -p "$INSTALL_DIR"
+      mkdir -p "$CONFIG_DIR"
+      mkdir -p "$BIN_DIR"
+
+      echo "Generating telemetry configuration (agent_config.json)..."
+      cat << 'EOF' > "$CONFIG_DIR/agent_config.json"
+      {
+        "vehicle_id": "V-7742",
+        "can_bus_interface": "can0",
+        "telemetry_endpoint": "tcp://mqtt.broker.local:1883",
+        "collection_rate_ms": 100,
+        "modules": ["engine_temp", "brake_wear", "vibration"]
+      }
+      EOF
+
+      echo "Downloading Edge Agent binary..."
+
+      cat << 'EOF' > "$BIN_DIR/agent"
+      #!/bin/sh
+      echo "Edge Telemetry Agent v1.2.0 (QNX Arch) is running..."
+      echo "Loaded modules: engine_temp, brake_wear, vibration"
+      echo "Reading from CAN interface (can0) and publishing to MQTT..."
+      EOF
+
+      chmod +x "$BIN_DIR/agent"
+
+      echo "Installation completed successfully."
+      echo "Verifying agent execution:"
+      "$BIN_DIR/agent"
+
+- name: 2. Execute the installer directly on QNX target
+  ansible.builtin.script:
+    cmd: "/tmp/install_automotive_agent.sh"
+  register: qnx_install_result
+
+- name: 3. Display installation output to Workbench
+  ansible.builtin.debug:
+    var: qnx_install_result.stdout_lines
+
+- name: 4. Clean up local installer script
+  delegate_to: localhost
+  ansible.builtin.file:
+    path: "/tmp/install_automotive_agent.sh"
+    state: absent
