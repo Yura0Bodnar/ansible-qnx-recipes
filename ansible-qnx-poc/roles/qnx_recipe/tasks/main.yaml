@@ -31,7 +31,7 @@
 
       cat << 'EOF' > "$BIN_DIR/agent"
       #!/bin/sh
-      echo "Edge Telemetry Agent v1.2.0 (QNX Arch) is running..."
+      echo "Edge Telemetry Agent (QNX Arch) is running..."
       echo "Loaded modules: engine_temp, brake_wear, vibration"
       echo "Reading from CAN interface (can0) and publishing to MQTT..."
       EOF
